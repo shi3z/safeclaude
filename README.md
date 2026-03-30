@@ -46,6 +46,11 @@ safeclaude ~/projects/myapp -r ~/projects/shared-lib -r ~/data
 -h, --help      Show help
 ```
 
+## Disclaimer
+
+> [!CAUTION]
+> This software is provided "as is", without warranty of any kind. The authors assume no responsibility for any damage, data loss, or security incidents caused by the use of this tool. Use entirely at your own risk.
+
 ## License
 
 MIT
