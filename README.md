@@ -1,6 +1,6 @@
 # SafeClaude
 
-Docker上でClaude Codeを安全に実行するツール。ホストマシンのファイルは読み取り専用、指定したワーキングディレクトリのみ書き込み可能。
+Docker上でClaude Codeを安全に実行するツール。ホストマシンへのアクセスを最小限に制限し、指定したワーキングディレクトリのみ書き込み可能。
 
 ## インストール
 
@@ -21,22 +21,28 @@ safeclaude
 
 # 特定のプロジェクトで起動
 safeclaude ~/projects/myapp
+
+# 他のディレクトリを読み取り専用で追加
+safeclaude ~/projects/myapp -r ~/projects/shared-lib -r ~/data
 ```
 
 ## セキュリティモデル
 
-| マウント | コンテナ内パス | 権限 |
+| 対象 | コンテナ内パス | 権限 |
 |---|---|---|
-| ホスト `/` | `/host` | 読み取り専用 |
 | ワーキングディレクトリ | `/workspace` | 読み書き可 |
+| `-r` で指定したディレクトリ | `/readonly/<name>` | 読み取り専用 |
+| その他のホストファイル | マウントしない | アクセス不可 |
 
-Claude Codeはコンテナ内で `--dangerously-skip-permissions` で動作しますが、Dockerのマウント制約により、ホストへの書き込みは指定ディレクトリに限定されます。
+- ホスト全体をマウントしないため、情報漏洩リスクを最小化
+- ネットワークは有効（pip install等に必要）だが、送れる情報を制限
+- Claude Codeはコンテナ内で `--dangerously-skip-permissions` で動作
 
 ## オプション
 
 ```
 -b, --build     Dockerイメージを強制再ビルド
--r, --ro-dir    追加の読み取り専用マウント (複数指定可)
+-r, --ro-dir    読み取り専用ディレクトリを追加 (複数指定可)
 -h, --help      ヘルプ表示
 ```
 

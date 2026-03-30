@@ -27,10 +27,11 @@ Examples:
   $(basename "$0") -b ~/projects/myapp      # イメージ再ビルドして起動
 
 Security:
-  - ホストの / は /host に読み取り専用でマウント
+  - ホスト全体はマウントしない (情報漏洩防止)
   - WORKSPACE_DIR のみ /workspace に読み書き可能でマウント
+  - -r で指定したディレクトリのみ /readonly/* に読み取り専用でマウント
   - Claude Code は --dangerously-skip-permissions で起動
-  - コンテナ内では自由だが、ホストへの影響は書き込みディレクトリに限定
+  - ネットワークは有効だが、送れる情報を最小限に制限
 EOF
     exit 0
 }
@@ -77,7 +78,11 @@ WORKSPACE_DIR="$(cd "$WORKSPACE_DIR" 2>/dev/null && pwd)" || {
 
 echo "=== SafeClaude ==="
 echo "  Workspace (読み書き可): $WORKSPACE_DIR"
-echo "  Host root (読み取り専用): /"
+if [[ ${#EXTRA_RO_MOUNTS[@]+"${#EXTRA_RO_MOUNTS[@]}"} -gt 0 ]]; then
+    for d in "${EXTRA_RO_MOUNTS[@]}"; do
+        echo "  ReadOnly: $d"
+    done
+fi
 echo ""
 
 # Build image if needed
@@ -89,19 +94,17 @@ fi
 
 # Construct mount options
 MOUNT_OPTS=(
-    # Host filesystem: read-only
-    -v "/:/host:ro"
     # Workspace: read-write
     -v "$WORKSPACE_DIR:/workspace:rw"
 )
 
-# Add extra read-only mounts
+# Add read-only mounts (only explicitly specified directories)
 for ro_dir in "${EXTRA_RO_MOUNTS[@]+"${EXTRA_RO_MOUNTS[@]}"}"; do
     abs_ro="$(cd "$ro_dir" 2>/dev/null && pwd)" || {
         echo "Warning: 読み取り専用ディレクトリが見つかりません: $ro_dir" >&2
         continue
     }
-    mount_point="/extra/$(basename "$abs_ro")"
+    mount_point="/readonly/$(basename "$abs_ro")"
     MOUNT_OPTS+=(-v "$abs_ro:$mount_point:ro")
 done
 
